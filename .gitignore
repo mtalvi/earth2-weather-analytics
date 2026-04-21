@@ -5,3 +5,5 @@ src/tests/files/testoutputs/
 cache/
 
 .vscode
+.venv/
+*.jpeg

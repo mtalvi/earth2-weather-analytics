@@ -21,9 +21,12 @@ nim:
   enabled: true
   overrideNgcAPIKey: ""
   shmSize: 4Gi
+  tolerations: []
+  nodeSelector: {}
 
 dfm:
   cacheSize: 16Gi
+  nodeSelector: {}
 
 image:
   process:
@@ -205,3 +208,67 @@ site:
     path: /var/secrets
     name: dfm-execute-site-secrets
     file: secrets.json
+
+# --- OpenShift Support ---
+# All OpenShift-specific resources are gated behind this flag.
+# When false (the default), the chart behaves identically to upstream
+# and produces no OpenShift resources.
+openshift:
+  enabled: false
+
+  # Create an OpenShift Route for external access to the process API.
+  # When enabled, the process Service drops its headless (clusterIP: None)
+  # setting so the Route has a ClusterIP to target.
+  route:
+    enabled: false
+    host: ""
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+  # SecurityContextConstraints RoleBinding for pods that need to run
+  # with arbitrary UIDs (most NVIDIA containers expect root or a fixed UID).
+  scc:
+    create: false
+    priority: 10
+
+# --- NIM Operator Integration ---
+# When the NIM Operator is installed (provides apps.nvidia.com/v1alpha1),
+# FourCastNet can be deployed as a NIMCache + NIMService pair instead of
+# a raw Deployment.  The NIM Operator handles model downloading, caching,
+# and GPU scheduling.
+#
+# To use, set nimOperator.fourcastnet.enabled: true and nim.enabled: false
+# (the values-openshift.yaml overlay does this automatically).
+nimOperator:
+  ngcApiSecretName: ngc-catalog-secret
+
+  fourcastnet:
+    enabled: false
+    replicas: 1
+    image:
+      repository: nvcr.io/nim/nvidia/fourcastnet
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+      requests:
+        nvidia.com/gpu: 1
+    storage:
+      pvc:
+        create: true
+        size: "50Gi"
+        volumeAccessMode: ReadWriteOnce
+        storageClass: ""
+      sharedMemorySizeLimit: "4Gi"
+    env:
+      - name: NIM_HTTP_API_PORT
+        value: "8086"
+    expose:
+      service:
+        name: inference
+        type: ClusterIP
+        port: 8086
+    nodeSelector: {}
+    tolerations: []

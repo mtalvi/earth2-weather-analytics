@@ -1,0 +1,64 @@
+# OpenShift overlay for the Earth-2 Weather Analytics Blueprint.
+#
+# Usage:
+#   helm install earth2-weather-analytics deploy/helm/ \
+#     -f deploy/helm/values.yaml \
+#     -f deploy/helm/values-openshift.yaml \
+#     -n earth2
+#
+# Cluster-specific values (image repositories, API keys, storage classes)
+# should be passed via --set at install time rather than hardcoded here.
+
+openshift:
+  enabled: true
+  route:
+    enabled: true
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+  scc:
+    create: true
+
+# Disable the Omniverse streamer.  It requires hostNetwork: true for WebRTC,
+# which conflicts with OpenShift's default restricted SCC.  If streaming is
+# needed, grant the hostnetwork SCC to the streamer service account and
+# re-enable this flag.
+streamer:
+  enabled: false
+
+# FourCastNet NIM uses a raw Deployment — its container does not include
+# the download-to-cache entrypoint that the NIM Operator's NIMCache
+# controller expects (that mechanism is designed for LLM NIMs).
+# FourCastNet handles model downloading internally at startup.
+nim:
+  enabled: true
+  tolerations:
+    - key: g6-gpu
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+nimOperator:
+  fourcastnet:
+    enabled: false
+
+# EBS (gp3-csi) only supports ReadWriteOnce.  All DFM pods that mount
+# dfm-cache must land on the same node.  Set dfm.nodeSelector to pin them.
+# Find a suitable non-GPU worker:  oc get nodes --selector='!nvidia.com/gpu.present'
+dfm:
+  cacheAccessMode: ReadWriteOnce
+  nodeSelector:
+    kubernetes.io/hostname: ip-10-0-21-101.us-east-2.compute.internal
+
+# pullPolicy: Never is for local MicroK8s builds.  On OpenShift, images must
+# come from a container registry.  Override repository/tag with --set if you
+# push to a private registry.
+image:
+  process:
+    pullPolicy: IfNotPresent
+  scheduler:
+    pullPolicy: IfNotPresent
+  execute:
+    pullPolicy: IfNotPresent
+  busybox:
+    pullPolicy: IfNotPresent

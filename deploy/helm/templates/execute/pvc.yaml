@@ -5,5 +5,5 @@ metadata:
   labels:
     {{- include "earth2.labels" . | nindent 4 }}
 spec:
-  accessModes: [ReadWriteMany]
+  accessModes: [{{ .Values.dfm.cacheAccessMode | default "ReadWriteMany" }}]
   resources: { requests: { storage: {{ .Values.dfm.cacheSize }} } }

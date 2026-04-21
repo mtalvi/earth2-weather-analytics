@@ -20,6 +20,10 @@ spec:
     spec:
       imagePullSecrets:
         - name: {{ .Values.ngcImagePullSecretName }}
+      {{- with .Values.dfm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: wait-for-redis
           image: "{{ include "earth2.image.prefix" . }}{{ .Values.image.busybox.repository }}:{{ .Values.image.busybox.tag }}"

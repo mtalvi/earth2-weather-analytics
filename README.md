@@ -68,6 +68,24 @@ and beginner knowledge of Kubernetes / Helm Charts.
 - [Sequence Diagram](./docs/06_sequence.md)
 - [Troubleshooting](./docs/07_troubleshooting.md)
 
+## OpenShift Deployment
+
+The Helm chart includes built-in support for Red Hat OpenShift, gated behind an
+`openshift.enabled` flag that defaults to `false`.  When enabled via the
+provided `values-openshift.yaml` overlay, the chart creates OpenShift Routes for
+external access and SCC RoleBindings for container security.  FourCastNet can
+optionally be deployed through the NIM Operator (NIMCache + NIMService) instead
+of a raw Deployment.
+
+```bash
+helm install earth2-weather-analytics deploy/helm/ \
+  -f deploy/helm/values.yaml \
+  -f deploy/helm/values-openshift.yaml \
+  -n earth2
+```
+
+See the full guide: [Deploying on OpenShift](./docs/deploy-openshift.md)
+
 ## Sample Visualizations
 
 Below are a few samples of what the following blueprint can produce.

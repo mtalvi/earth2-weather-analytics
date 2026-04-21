@@ -14,4 +14,6 @@ spec:
     protocol: TCP
     name: http-process
   type: {{ .Values.service.process.type }}
-  clusterIP: None # TODO: Should this be headless or not?
+  {{- if not .Values.openshift.enabled }}
+  clusterIP: None
+  {{- end }}
